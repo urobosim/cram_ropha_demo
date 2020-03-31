@@ -48,9 +48,8 @@
 
                cram-common-failures
                cram-mobile-pick-place-plans
+               cram-object-knowledge
 
-
-               cram-knowrob-pick-place
                cram-cloud-logger
 
                cram-physics-utils     ; for reading "package://" paths
@@ -61,17 +60,18 @@
                cram-btr-visibility-costmap
                cram-btr-spatial-relations-costmap
 
-               ;; cram-semantic-map-costmap
+               ;; ;; cram-semantic-map-costmap
                cram-robot-pose-gaussian-costmap
                cram-occupancy-grid-costmap
                cram-location-costmap
-
-               cram-pr2-projection      ; for with-simulated-robot
-               cram-pr2-projection-reasoning ; for projection-based reasoning
-               cram-pr2-description
                cram-pr2-process-modules
-               cram-pr2-fetch-deliver-plans
-               cram-pr2-environment-manipulation)
+
+               cram-urdf-projection      ; for with-simulated-robot
+               cram-urdf-projection-reasoning ; to set projection reasoning to T
+               cram-fetch-deliver-plans
+               cram-urdf-environment-manipulation
+               cram-urobosim)
+
 
   :components
   ((:module "src"
@@ -79,8 +79,5 @@
     ((:file "package")
      (:file "setup" :depends-on ("package"))
      (:file "costmaps" :depends-on ("package"))
-     (:file "projection-demo" :depends-on ("package" "costmaps"))
-     (:file "demo" :depends-on ("package" "projection-demo" "costmaps"))
-     (:file "data-generation-script" :depends-on ("package" "projection-demo" "costmaps"))
-     (:file "data-generation-plan" :depends-on ("package" "demo"))
-     (:file "evaluation-plan" :depends-on ("package" "demo"))))))
+     (:file "demo" :depends-on ("package" "costmaps"))
+     ))))

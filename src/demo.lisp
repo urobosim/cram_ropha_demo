@@ -51,63 +51,202 @@
                  (type positioning-arm)
                  (left-configuration park)
                  (right-configuration park)))
-      (let ((?pose (cl-transforms-stamped:make-pose-stamped
-                    cram-tf:*fixed-frame*
-                    0.0
-                    (cl-transforms:make-identity-vector)
-                    (cl-transforms:make-identity-rotation))))
-        (exe:perform
-         (desig:an action
-                   (type going)
-                   (target (desig:a location
-                                    (pose ?pose))))))
+      ;; (let ((?pose (cl-transforms-stamped:make-pose-stamped
+      ;;               cram-tf:*fixed-frame*
+      ;;               0.0
+      ;;               (cl-transforms:make-identity-vector)
+      ;;               (cl-transforms:make-identity-rotation))))
+      ;;   (exe:perform
+      ;;    (desig:an action
+      ;;              (type going)
+      ;;              (target (desig:a location
+      ;;                               (pose ?pose))))))
       (exe:perform (desig:an action (type opening-gripper) (gripper (left right))))
-      (exe:perform (desig:an action (type looking) (direction forward))))))
+      ;; (exe:perform (desig:an action (type looking) (direction forward)))
+      )))
 
 (defun initialize ()
   (sb-ext:gc :full t)
+  ;;(when ccl::*is-logging-enabled*
+  ;;    (setf ccl::*is-client-connected* nil)
+  ;;    (ccl::connect-to-cloud-logger)
+  ;;    (ccl::reset-logged-owl))
 
-
- (when ccl::*is-logging-enabled*
-   (setf ccl::*is-client-connected* nil)
-    (ccl::connect-to-cloud-logger)
-    (ccl::reset-logged-owl))
+  ;; (setf proj-reasoning::*projection-checks-enabled* t)
 
   (btr:detach-all-objects (btr:get-robot-object))
-  (btr:detach-all-objects (btr:object btr:*current-bullet-world* :kitchen))
+  (btr:detach-all-objects (btr:get-environment-object))
   (btr-utils:kill-all-objects)
-  (setf (btr:joint-state (btr:object btr:*current-bullet-world* :kitchen)
+  (setf (btr:joint-state (btr:get-environment-object)
                          "sink_area_left_upper_drawer_main_joint")
-        0.0)
+        0.0
+        (btr:joint-state (btr:get-environment-object)
+                         "sink_area_left_middle_drawer_main_joint")
+        0.0
+        (btr:joint-state (btr:get-environment-object)
+                         "iai_fridge_door_joint")
+        0.0
+        (btr:joint-state (btr:get-environment-object)
+                         "oven_area_area_right_drawer_main_joint")
+        0.0
+        (btr:joint-state (btr:get-environment-object)
+                         "sink_area_trash_drawer_main_joint")
+        0)
   (btr-belief::publish-environment-joint-state
-   (btr:joint-states (btr:object btr:*current-bullet-world* :kitchen)))
+   (btr:joint-states (btr:get-environment-object)))
 
   (setf desig::*designators* (tg:make-weak-hash-table :weakness :key))
 
-  (unless cram-projection:*projection-environment*
-    ;;(json-prolog:prolog-simple "rdf_retractall(A,B,C,belief_state).")
-    (btr-belief::call-giskard-environment-service :kill-all "attached")
-    (cram-bullet-reasoning-belief-state::call-giskard-environment-service
-     :add-kitchen
-     "kitchen"
-     (cl-transforms-stamped:make-pose-stamped
-      "map"
-      0.0
-      (cl-transforms:make-identity-vector)
-      (cl-transforms:make-identity-rotation))))
+  (coe:clear-belief)
+
+  (btr:clear-costmap-vis-object)
 
   ;; (setf cram-robot-pose-guassian-costmap::*orientation-samples* 3)
+
   )
 
 (defun finalize ()
   ;; (setf pr2-proj-reasoning::*projection-reasoning-enabled* nil)
 
   (when ccl::*is-logging-enabled*
-   (ccl::export-log-to-owl "ease_milestone_2018.owl")
+   (ccl::export-log-to-owl "ropha-280619-1.owl")
    ;; (ccl::export-belief-state-to-owl "ease_milestone_2018_belief.owl")
    )
   (sb-ext:gc :full t))
 
+(defun opening-test ()
+
+  (pr2-pms:with-real-robot
+   ;; (initialize)
+   (park-robot)
+
+
+   (let* ((?pose (cl-transforms-stamped:make-pose-stamped
+                  "map" 0.0
+                  (cl-transforms:make-3d-vector 0.55 0.4 0)
+                  ;; (cl-transforms:make-identity-rotation)
+                  (cl-transforms:axis-angle->quaternion (cl-transforms:make-3d-vector 0 0 1) (* -0.5 pi))
+                  ))
+
+          (?robot-location-designator (desig:a location (pose ?pose)))
+          )
+
+     (cpl:with-failure-handling
+      ((cpl:plan-failure (e)
+                         (declare (ignore e))
+                         (return)))
+
+       (cram-executive:perform
+        (desig:an action
+                (type going)
+                (target ?robot-location-designator))))
+
+     (exe:perform
+      (let ((?handle-aproach-pose (cl-tf:make-pose-stamped
+                    cram-tf:*fixed-frame* 0.0
+                    ;; (cl-transforms:make-3d-vector 1.1 0.6 0.92)
+                    (cl-transforms:make-3d-vector 1.1 0.9 0.77)
+                    ;; (cl-transforms:make-identity-rotation)
+                    (cl-transforms:euler->quaternion :ax (/  pi  2))
+                    )))
+        (desig:a motion (type moving-tcp) (left-pose ?handle-aproach-pose))))
+
+     (exe:perform
+      (let ((?handle-pose (cl-tf:make-pose-stamped
+                    cram-tf:*fixed-frame* 0.0
+                    (cl-transforms:make-3d-vector 1.18 0.9 0.77)
+                    ;; (cl-transforms:make-3d-vector 1.27 0.6 0.92)
+                    ;; (cl-transforms:make-identity-rotation)
+                    (cl-transforms:euler->quaternion :ax (/  pi  2))
+                    )))
+        (desig:a motion (type moving-tcp) (left-pose ?handle-pose))))
+
+     (exe:perform
+      (desig:an action
+             (type setting-gripper)
+             (gripper left)
+             (position 0)))
+
+     (exe:perform
+      (let ((?handle-pose (cl-tf:make-pose-stamped
+                    cram-tf:*fixed-frame* 0.0
+                    (cl-transforms:make-3d-vector 1.1 0.9 0.76)
+                    ;; (cl-transforms:make-3d-vector 1.25 0.6 1.12)
+                    ;; (cl-transforms:make-identity-rotation)
+                    (cl-transforms:euler->quaternion :ax (/  pi  2))
+                    )))
+        (desig:a motion (type moving-tcp) (left-pose ?handle-pose))))
+
+
+     )
+
+   )
+  )
+
+(defun ropha-demo ()
+  (with-real-robot
+  (initialize)
+  (park-robot)
+
+   (let* (
+          (?perceived-object-designator
+           (cram-executive:perform
+            (desig:an action
+                      (type detecting)
+                      (object (desig:an object (type spoon)))))
+           )
+
+          (?pose (cl-transforms-stamped:make-pose-stamped
+                  "map" 0.0
+                  (cl-transforms:make-3d-vector -4.55 0.233 0)
+                  (cl-transforms:axis-angle->quaternion (cl-transforms:make-3d-vector 0 0 1) (/ pi 4))))
+
+          (?robot-location-designator (desig:a location (pose ?pose))
+                                      )
+          (?bowl-pose (cl-transforms-stamped:make-pose-stamped
+                  "map" 0.0
+                  (cl-transforms:make-3d-vector -4.1 0.7 0.88)
+                  (cl-transforms:make-identity-rotation)))
+
+          (?bowl-location-designator (desig:a location (pose ?bowl-pose))
+                                      )
+
+          (?mouth-pose (cl-transforms-stamped:make-pose-stamped
+                  "map" 0.0
+                  (cl-transforms:make-3d-vector -4.36 1.06 1.11)
+                  (cl-transforms:make-identity-rotation)))
+
+          (?mouth-location-designator (desig:a location (pose ?mouth-pose))
+                                      )
+          )
+     (cram-executive:perform
+      (desig:an action
+                (type fetching)
+                (arm left)
+                (object ?perceived-object-designator)
+                ))
+
+     (cpl:with-failure-handling
+      ((cpl:plan-failure (e)
+                         (declare (ignore e))
+                         (return)))
+
+       (cram-executive:perform
+        (desig:an action
+                (type going)
+                (target ?robot-location-designator))))
+
+     (cram-executive:perform
+      (desig:an action
+                (type spooning)
+                (location ?bowl-location-designator)
+                (target ?mouth-location-designator)
+                ))
+     )
+
+  (finalize)
+   )
+)
 
 (cpl:def-cram-function demo-random (&optional
                                     (random t)
@@ -212,8 +351,10 @@
                                  (far-from (an object (type bowl)))
                                  (for (an object (type milk)))))))))
 
-    ;; (an object
-    ;;     (obj-part "drawer_sinkblock_upper_handle"))
+    (an object
+        (obj-part "drawer_sinkblock_upper_handle"))
+
+
 
     (dolist (?object-type list-of-objects)
       (let* ((?fetching-location
@@ -234,6 +375,7 @@
                            (cad-model ?cad-model))
                          (desig:when ?color
                            (color ?color)))))
+
 
         (when (eq ?object-type :bowl)
           (cpl:with-failure-handling
@@ -285,4 +427,5 @@
 
   (finalize)
 
-  cpl:*current-path*)
+      cpl:*current-path*
+      )

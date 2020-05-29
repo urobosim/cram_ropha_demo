@@ -57,20 +57,24 @@
                cram-bullet-reasoning
                cram-bullet-reasoning-belief-state
                cram-bullet-reasoning-utilities
+
+               cram-location-costmap
                cram-btr-visibility-costmap
                cram-btr-spatial-relations-costmap
-
-               ;; ;; cram-semantic-map-costmap
                cram-robot-pose-gaussian-costmap
                cram-occupancy-grid-costmap
-               cram-location-costmap
-               cram-pr2-process-modules
 
                cram-urdf-projection      ; for with-simulated-robot
                cram-urdf-projection-reasoning ; to set projection reasoning to T
                cram-fetch-deliver-plans
                cram-urdf-environment-manipulation
-               cram-urobosim)
+
+               cram-pr2-pick-place-demo
+               cram-pr2-description
+               cram-pr2-process-modules
+               cram-urobosim
+               cram-avatar
+               )
 
 
   :components

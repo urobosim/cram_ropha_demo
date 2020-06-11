@@ -345,7 +345,7 @@
 ;;   )
 
 
-(defun fetch-knife ()
+(defun fetch-knife (&key &allow-other-keys)
 
   (let* ((?fetching-location (desig:a location
                                      (in (desig:an object
@@ -434,69 +434,11 @@
   )
 
 
-(defun fetch-topping ()
-
-  (let* ((?fetching-location (desig:a location
-                                      (on (desig:an object
-                                                    (type counter-top)
-                                                    (urdf-name sink-area-surface)
-                                                    (owl-name "kitchen_sink_block_counter_top")
-                                                    (part-of environment)))
-                                      (side left)
-                                      (side front)
-                                      (range 0.5)))
-         (?object-designator
-          (desig:an object
-                    (type cup)
-                    (location ?fetching-location))
-          )
-
-         (?pose (cl-transforms-stamped:make-pose-stamped
-                 "map" 0.0
-                 ;; (cl-transforms:make-3d-vector 0.56112 1.0401 0)
-                 (cl-transforms:make-3d-vector 0.6 0.5 0)
-                 ;; (cl-transforms:make-3d-vector 0.56112 1.2401 0)
-                 ;; (cl-transforms:make-quaternion 0 0 -0.076819 0.99705)
-                 (cl-transforms:axis-angle->quaternion (cl-transforms:make-3d-vector 0 0 1) 0.3)
-                 ;; (cl-transforms:make-identity-rotation)
-                 ))
-
-
-         )
-
-    (let ((?perceived-object-designator
-           (exe:perform (desig:an action
-                                  (type searching)
-                                  (object ?object-designator)
-                                  (location ?fetching-location)
-                                  ))))
-      (roslisp:ros-info (pp-plans transport)
-                        "Found object of type ~a."
-                        (desig:desig-prop-value ?perceived-object-designator :type))
-
-      ;; base footprint 0.6441, 0.87709, 0       0, 0, 0.16296, 0.98663
-      (let ((?fetched-object
-             (exe:perform (desig:an action
-                                    (type fetching)
-                                    (arms (left))
-                                    ;; (grasp top)
-                                    (object ?perceived-object-designator)
-                                    (robot-location (a location (pose ?pose)))
-                                    ))))
-        (roslisp:ros-info (pp-plans transport) "Fetched the object.")
-
-        (exe:perform (desig:an action
-                             (type positioning-arm)
-                             (right-configuration park)))
-        (return-from fetch-topping ?fetched-object)
-        )
-      )
-    )
-)
 
 
 
-(defun cut-waffle ()
+
+(defun cut-waffle (&key &allow-other-keys)
   (let*
       ((?waffle-location (desig:a location
                                     (on (desig:an object
@@ -526,7 +468,7 @@
 
           (?first-cut-location-low (cl-tf:make-pose-stamped
                    cram-tf:*robot-base-frame* 0.0
-                   (cl-transforms:make-3d-vector 0.73 -0.2 1.00)
+                   (cl-transforms:make-3d-vector 0.73 -0.2 0.99)
                     (cl-transforms:euler->quaternion :ax (/  pi  1.2))
                     ))
 
@@ -537,7 +479,7 @@
                     ))
           (?second-cut-location-low (cl-tf:make-pose-stamped
                    cram-tf:*robot-base-frame* 0.0
-                   (cl-transforms:make-3d-vector 0.73 -0.05 1.00)
+                   (cl-transforms:make-3d-vector 0.73 -0.05 1.99)
                                        (cl-transforms:euler->quaternion :ax (/  pi  1.2))
                     ))
 
@@ -548,7 +490,7 @@
                                 ))
           (?third-cut-location-low (cl-tf:make-pose-stamped
                                     cram-tf:*robot-base-frame* 0.0
-                                    (cl-transforms:make-3d-vector 0.75 -0.15 1.00)
+                                    (cl-transforms:make-3d-vector 0.75 -0.15 0.99)
                                     (cl-transforms:euler->quaternion :ax (/  pi  1.2)  :az (/  pi  2))
                                     ))
 
@@ -559,7 +501,7 @@
                                  ))
           (?fourth-cut-location-low (cl-tf:make-pose-stamped
                                      cram-tf:*robot-base-frame* 0.0
-                                     (cl-transforms:make-3d-vector 0.6 -0.15 1.00)
+                                     (cl-transforms:make-3d-vector 0.6 -0.15 0.99)
                                      (cl-transforms:euler->quaternion :ax (/  pi  1.2)  :az (/  pi  2))
                                      ))
 
@@ -592,30 +534,38 @@
 
 (defun ask-preference ()
 
-  (let* ((?pose (cl-transforms-stamped:make-pose-stamped
+  (let* ((?pose1 (cl-transforms-stamped:make-pose-stamped
                   "map" 0.0
                   (cl-transforms:make-3d-vector 0.41 1.01 0)
-                  ;; (cl-transforms:make-3d-vector -0.25 0.933 0)
-                    ;; (cl-transforms:make-identity-rotation)
+                  (cl-transforms:axis-angle->quaternion (cl-transforms:make-3d-vector 0 0 1) (/ pi -2))
+                  ))
+          (?robot-location-designator1 (desig:a location (pose ?pose1)))
+          (?pose2 (cl-transforms-stamped:make-pose-stamped
+                  "map" 0.0
+                  (cl-transforms:make-3d-vector 0.41 1.01 0)
                     (cl-transforms:axis-angle->quaternion (cl-transforms:make-3d-vector 0 0 1) (/ pi 1))
                     ))
-          (?robot-location-designator (desig:a location (pose ?pose)))
+          (?robot-location-designator2 (desig:a location (pose ?pose2)))
          )
     (exe:perform (desig:an action
                 (type going)
-                (target ?robot-location-designator)))
-   (let ((testanswer (aia:call-qna-action "Do you want vanilla toping?")))
-     ;; (string= testanswer "Yes")
+                (target ?robot-location-designator1)))
+    (exe:perform (desig:an action
+                (type going)
+                (target ?robot-location-designator2)))
+   (let ((testanswer (aia:call-qna-action "Do you want blueberry toping?")))
      (if (string= testanswer "Yes")
-         (let ((?topping (fetch-topping)))
-           (return-from ask-preference ?topping)
-           )
+         ;; (let ((?topping (fetch-topping)))
+         ;;   (return-from ask-preference ?topping)
+         ;;   )
+           (return-from ask-preference "blueberry")
        ;; (print "answer was yes")
-       (let ((answer2 (aia:call-qna-action "Do you want blueberry toping?")))
+       (let ((answer2 (aia:call-qna-action "Do you want vanilla toping?")))
          (if (string= answer2 "Yes")
-             (let ((?topping (fetch-topping)))
-               (return-from ask-preference ?topping)
-               )
+             ;; (let ((?topping (fetch-topping)))
+             ;;   (return-from ask-preference ?topping)
+             ;;   )
+               (return-from ask-preference "vanilla")
            (print "Ok, than no topping it is."))
          ))
 
@@ -624,60 +574,8 @@
   ;; (fetch-topping)
   )
 
-(defun apply-topping ()
-  (let*
-      ((?waffle-location (desig:a location
-                                    (on (desig:an object
-                                                  (type counter-top)
-                                                  (urdf-name kitchen-island-surface)
-                                                  (owl-name "kitchen_island_counter_top")
-                                                  (part-of kitchen)))
-                                    ))
-         (?object-designator
-          (desig:an object
-                    (type plate)
-                    (location ?waffle-location)))
 
-          (?pose (cl-transforms-stamped:make-pose-stamped
-                  "map" 0.0
-                  (cl-transforms:make-3d-vector 0.05 0.48 0)
-                  ;; (cl-transforms:make-3d-vector -0.25 0.933 0)
-                    ;; (cl-transforms:make-identity-rotation)
-                    (cl-transforms:axis-angle->quaternion (cl-transforms:make-3d-vector 0 0 1) (/ pi 1))
-                    ))
-
-          (?robot-location-designator (desig:a location (pose ?pose)))
-
-          (?topping-approach-location (cl-tf:make-pose-stamped
-                   cram-tf:*robot-base-frame* 0.0
-                   (cl-transforms:make-3d-vector 0.75 -0.2 1.05)
-                    (cl-transforms:make-identity-rotation)
-                    ;; (cl-transforms:axis-angle->quaternion (cl-transforms:make-3d-vector 1 0 0) (/ pi 0))
-                    ))
-          (?topping-target-location (cl-tf:make-pose-stamped
-                   cram-tf:*robot-base-frame* 0.0
-                   (cl-transforms:make-3d-vector 0.75 -0.2 1.05)
-                    (cl-transforms:axis-angle->quaternion (cl-transforms:make-3d-vector 1 0 0) (/ pi -1.5))
-                    ))
-
-
-          )
-
-    (exe:perform (desig:an action
-                (type going)
-                (target ?robot-location-designator)))
-
-    (exe:perform
-       (desig:a motion (type moving-tcp) (left-pose ?topping-approach-location)))
-
-    (exe:perform
-       (desig:a motion (type moving-tcp) (left-pose ?topping-target-location)))
-
-    (exe:perform
-       (desig:a motion (type moving-tcp) (left-pose ?topping-approach-location))))
-  )
-
-(defun place-knife (?knife)
+(defun place-knife (&key ((:object ?knife)) &allow-other-keys)
   (let* (
         (?pose (cl-transforms-stamped:make-pose-stamped
                   "map" 0.0
@@ -730,7 +628,7 @@
 
   )
 
-(defun place-topping (?topping)
+(defun place-topping (&key ((:object ?topping)) &allow-other-keys)
   (let* (
 
          (?pose (cl-transforms-stamped:make-pose-stamped
@@ -781,7 +679,7 @@
 
   )
 
-(defun deliver-waffle ()
+(defun deliver-waffle (&key &allow-other-keys)
   (let* ((?plate-location (desig:a location
                                    (side right)
                                    ;; (side front)
@@ -804,26 +702,28 @@
                  ;; (cl-transforms:axis-angle->quaternion (cl-transforms:make-3d-vector 0 0 1) (0))
                  ;; (cl-transforms:make-identity-rotation)
                  ))
-        (?transfort-pose (cl-tf:make-pose-stamped
-                   cram-tf:*robot-base-frame* 0.0
-                   (cl-transforms:make-3d-vector 0.55 0.4 1.25)
-                   ;; (cl-transforms:make-identity-rotation)
-                    ;; (cl-transforms:axis-angle->quaternion (cl-transforms:make-3d-vector 1 0 0) (/ pi -2))
-                    (cl-transforms:euler->quaternion :ax (/  pi  -2) :ay (/ pi 6))
-                    ))
+        ;; (?transfort-pose (cl-tf:make-pose-stamped
+        ;;            cram-tf:*robot-base-frame* 0.0
+        ;;            (cl-transforms:make-3d-vector 0.55 0.4 1.25)
+        ;;            ;; (cl-transforms:make-identity-rotation)
+        ;;             ;; (cl-transforms:axis-angle->quaternion (cl-transforms:make-3d-vector 1 0 0) (/ pi -2))
+        ;;             (cl-transforms:euler->quaternion :ax (/  pi  -2) :ay (/ pi 6))
+        ;;             ))
          )
 
-    (let ((?perceived-object-designator
-           (exe:perform (desig:an action
+    ;; (let ()
+    ;;   (roslisp:ros-info (pp-plans transport)
+    ;;                     "Found object of type ~a."
+    ;;                     (desig:desig-prop-value ?perceived-object-designator :type))
+
+      (let*(
+            (?perceived-object-designator
+             (exe:perform (desig:an action
                                   (type searching)
                                   (object ?object-designator)
                                   (location ?plate-location)
-                                  ))))
-      (roslisp:ros-info (pp-plans transport)
-                        "Found object of type ~a."
-                        (desig:desig-prop-value ?perceived-object-designator :type))
-
-      (let*((?fetched-object
+                                  )))
+            (?fetched-object
              (exe:perform (desig:an action
                                     (type fetching)
                                     (arms (left))
@@ -857,16 +757,13 @@
                     ))
           (?deliver-pose4 (cl-transforms-stamped:make-pose-stamped
                   "map" 0.0
-                  (cl-transforms:make-3d-vector -4.80 0.32 0)
-                  ;; (cl-transforms:make-3d-vector -0.25 0.933 0)
-                    ;; (cl-transforms:make-identity-rotation)
-                    (cl-transforms:axis-angle->quaternion (cl-transforms:make-3d-vector 0 0 1) (/ pi 4))
+                  ;; (cl-transforms:make-3d-vector -4.80 0.32 0)
+                  (cl-transforms:make-3d-vector -4.4 0.08 0)
+                    (cl-transforms:axis-angle->quaternion (cl-transforms:make-3d-vector 0 0 1) (/ pi 3))
                     ))
           (?deliver-pose5 (cl-transforms-stamped:make-pose-stamped
                   "map" 0.0
-                  (cl-transforms:make-3d-vector -5.00 0.12 0)
-                  ;; (cl-transforms:make-3d-vector -0.25 0.933 0)
-                    ;; (cl-transforms:make-identity-rotation)
+                  (cl-transforms:make-3d-vector -4.80 -0.32 0)
                     (cl-transforms:axis-angle->quaternion (cl-transforms:make-3d-vector 0 0 1) (/ pi 4))
                     ))
           (?deliver-location-designator1 (desig:a location (pose ?deliver-pose1)))
@@ -877,14 +774,14 @@
 
           (?waffel-target-location (cl-tf:make-pose-stamped
                    cram-tf:*robot-base-frame* 0.0
-                   (cl-transforms:make-3d-vector 0.65 0.1 0.85)
-                    (cl-transforms:axis-angle->quaternion (cl-transforms:make-3d-vector 1 0 0) (/ pi -2))
+                   (cl-transforms:make-3d-vector 0.68 0.37 0.85)
+                    (cl-transforms:euler->quaternion :ax (/  pi  -2) :ay (/ pi 6))
                     ))
 
           (?waffel-target-location-low (cl-tf:make-pose-stamped
                    cram-tf:*robot-base-frame* 0.0
-                   (cl-transforms:make-3d-vector 0.65 0.1 0.79)
-                    (cl-transforms:axis-angle->quaternion (cl-transforms:make-3d-vector 1 0 0) (/ pi -2))
+                   (cl-transforms:make-3d-vector 0.68 0.37 0.79)
+                    (cl-transforms:euler->quaternion :ax (/  pi  -2) :ay (/ pi 6))
                     ))
 
             )
@@ -897,8 +794,8 @@
                              (type positioning-arm)
                              (right-configuration park)
                              ))
-        (exe:perform
-         (desig:a motion (type moving-tcp) (left-pose ?transfort-pose)))
+        ;; (exe:perform
+        ;;  (desig:a motion (type moving-tcp) (left-pose ?transfort-pose)))
 
         (exe:perform (desig:an action
                 (type going)
@@ -926,9 +823,12 @@
                 (type going)
                 (target ?deliver-location-designator5)))
         (park-robot)
+
+
+        (aia:send-sync-state 2)
         )
 
-      )
+      ;; )
 
         ;; (exe:perform
         ;;  (desig:an action
@@ -944,7 +844,7 @@
 
   )
 
-(defun transport-waffel()
+(defun transport-waffel(&key &allow-other-keys)
       (let*(
 
           (?deliver-pose1 (cl-transforms-stamped:make-pose-stamped
@@ -1021,296 +921,76 @@
 (defun init-avatar ()
   ;; (aia:start-ros-node "cram_client")
   ;; (aia:init-ros-avatar "avatar")
+  (aia:init-sub)
+  (aia:init-pub)
+  )
+
+
+(defun robot-part ()
+
+
+  (aia:wait-for-sync-state 1)
+  (let* (
+         (answer (ask-preference))
+           (?knife (exe:perform
+                    (desig:an action
+                              (type fetch-knife)
+                              )))
+           (?topping (exe:perform
+                    (desig:an action
+                              (type fetch-topping)
+                              ;; (string answer)
+                              )))
+           )
+
+      (exe:perform (desig:an action
+                             (type apply-topping)
+                             ))
+
+      (exe:perform (desig:an action
+                             (type cut-waffle)
+                             ))
+
+
+      (exe:perform (desig:an action
+                             (type place-knife)
+                             (object ?knife)
+                             ))
+      (exe:perform (desig:an action
+                             (type place-topping)
+                             (object ?topping)
+                             ))
+      (exe:perform (desig:an action
+                             (type deliver-waffle)
+                             ))
+      ;; (apply-topping)
+      ;; (cut-waffle)
+      ;; (place-knife ?knife)
+      ;; (place-topping ?topping)
+      ;; (deliver-waffle)
+      )
   )
 
 (defun ropha-demo-waffle ()
   (pr2-pms:with-real-robot
-  ;; (urdf-proj:with-simulated-robot
+
     (demo::initialize)
+  ;;   (setf ccl::*is-logging-enabled* t)
+  ;;   (ccl::start-episode)
+
     (init-avatar)
-    ;; (when cram-projection:*projection-environment*
-    ;;     (spawn-objects-on-sink-counter :random nil))
     (park-robot)
+    (robot-part)
+
+  ;; (setf ccl::*episode-name* nil)
+    ;; (setf ccl::*is-logging-enabled* nil)
 
 
-    ;; (deliver-waffle)
-    ;; (let (
-    ;;       (?topping (ask-preference)))
-    ;;   (place-topping ?topping)
-    ;;   )
-    ;; (let (
-    ;;       (?knife (fetch-knife)))
-    ;;   (place-knife ?knife)
-    ;;   )
-    (let ((?topping (ask-preference))
-          (?knife (fetch-knife)))
-      (apply-topping)
-      (cut-waffle)
-      (place-knife ?knife)
-      (place-topping ?topping)
-      (deliver-waffle)
-      )
-
-
-    ;; (ask-preference)
-    ;; (fetch-topping)
-    ;; (place-topping)
-    ;; (apply-topping)
-    ;; (cut-waffle)
-    ;; (deliver-waffle)
-    ;; (transport-waffel)
-
-
-
-    ;; (print "Ask for preference")
-    ;; (ask-preference)
+    ;;   (exe:perform (desig:an action
+    ;;                          (type fetch-topping)
+    ;;                          ;; (string "yes")
+    ;;                          ))
 
    )
+
 )
-
-;; (defun ropha-demo ()
-;;   (pr2-pms:with-real-robot
-;;   (initialize)
-;;   (park-robot)
-
-;;    (let* (
-;;           (?perceived-object-designator
-;;            (cram-executive:perform
-;;             (desig:an action
-;;                       (type detecting)
-;;                       (object (desig:an object (type spoon)))))
-;;            )
-
-;;           (?pose (cl-transforms-stamped:make-pose-stamped
-;;                   "map" 0.0
-;;                   (cl-transforms:make-3d-vector -4.55 0.233 0)
-;;                   (cl-transforms:axis-angle->quaternion (cl-transforms:make-3d-vector 0 0 1) (/ pi 4))))
-
-;;           (?robot-location-designator (desig:a location (pose ?pose))
-;;                                       )
-;;           (?bowl-pose (cl-transforms-stamped:make-pose-stamped
-;;                   "map" 0.0
-;;                   (cl-transforms:make-3d-vector -4.1 0.7 0.88)
-;;                   (cl-transforms:make-identity-rotation)))
-
-;;           (?bowl-location-designator (desig:a location (pose ?bowl-pose))
-;;                                       )
-
-;;           (?mouth-pose (cl-transforms-stamped:make-pose-stamped
-;;                   "map" 0.0
-;;                   (cl-transforms:make-3d-vector -4.36 1.06 1.11)
-;;                   (cl-transforms:make-identity-rotation)))
-
-;;           (?mouth-location-designator (desig:a location (pose ?mouth-pose))
-;;                                       )
-;;           )
-;;      (cram-executive:perform
-;;       (desig:an action
-;;                 (type fetching)
-;;                 (arm left)
-;;                 (object ?perceived-object-designator)
-;;                 ))
-
-;;      (cpl:with-failure-handling
-;;       ((cpl:plan-failure (e)
-;;                          (declare (ignore e))
-;;                          (return)))
-
-;;        (cram-executive:perform
-;;         (desig:an action
-;;                 (type going)
-;;                 (target ?robot-location-designator))))
-
-;;      (cram-executive:perform
-;;       (desig:an action
-;;                 (type spooning)
-;;                 (location ?bowl-location-designator)
-;;                 (target ?mouth-location-designator)
-;;                 ))
-;;      )
-
-;;   (finalize)
-;;    )
-;; )
-
-;; (cpl:def-cram-function demo-random (&optional
-;;                                     (random t)
-;;                                     (list-of-objects '(:bowl :spoon :cup :milk :breakfast-cereal)))
-
-;;   (initialize)
-;;   (when cram-projection:*projection-environment*
-;;     (if random
-;;         (spawn-objects-on-sink-counter-randomly)
-;;         (spawn-objects-on-sink-counter)))
-
-;;   (park-robot)
-
-;;   (let ((object-fetching-locations
-;;           `((:breakfast-cereal . ,(desig:a location
-;;                                            (on (desig:an object
-;;                                                          (type counter-top)
-;;                                                          (urdf-name sink-area-surface)
-;;                                                          (owl-name "kitchen_sink_block_counter_top")
-;;                                                          (part-of kitchen)))
-;;                                            (side left)
-;;                                            (side front)
-;;                                            (range 0.5)))
-;;             (:cup . ,(desig:a location
-;;                               (side left)
-;;                               (on (desig:an object
-;;                                             (type counter-top)
-;;                                             (urdf-name sink-area-surface)
-;;                                             (owl-name "kitchen_sink_block_counter_top")
-;;                                             (part-of kitchen)))))
-;;             (:bowl . ,(desig:a location
-;;                                (on (desig:an object
-;;                                              (type counter-top)
-;;                                              (urdf-name sink-area-surface)
-;;                                              (owl-name "kitchen_sink_block_counter_top")
-;;                                              (part-of kitchen)))
-;;                                (side left)
-;;                                (side front)
-;;                                (range-invert 0.5)))
-;;             (:spoon . ,(desig:a location
-;;                                 (in (desig:an object
-;;                                               (type drawer)
-;;                                               (urdf-name sink-area-left-upper-drawer-main)
-;;                                               (owl-name "drawer_sinkblock_upper_open")
-;;                                               (part-of kitchen)))
-;;                                 (side front)))
-;;             (:milk . ,(desig:a location
-;;                                (side left)
-;;                                (side front)
-;;                                (range 0.5)
-;;                                (on;; in
-;;                                    (desig:an object
-;;                                              (type counter-top)
-;;                                              (urdf-name sink-area-surface ;; iai-fridge-main
-;;                                                         )
-;;                                              (owl-name "kitchen_sink_block_counter_top"
-;;                                                        ;; "drawer_fridge_upper_interior"
-;;                                                        )
-;;                                              (part-of kitchen)))))))
-;;         (object-placing-locations
-;;           (let ((?pose
-;;                   (cl-transforms-stamped:make-pose-stamped
-;;                    "map"
-;;                    0.0
-;;                    (cl-transforms:make-3d-vector -0.78 0.8 0.95)
-;;                    (cl-transforms:make-quaternion 0 0 0.6 0.4))))
-;;             `((:breakfast-cereal . ,(desig:a location
-;;                                              (pose ?pose)
-;;                                              ;; (left-of (an object (type bowl)))
-;;                                              ;; (far-from (an object (type bowl)))
-;;                                              ;; (for (an object (type breakfast-cereal)))
-;;                                              ;; (on (desig:an object
-;;                                              ;;               (type counter-top)
-;;                                              ;;               (urdf-name kitchen-island-surface)
-;;                                              ;;               (owl-name "kitchen_island_counter_top")
-;;                                              ;;               (part-of kitchen)))
-;;                                              ;; (side back)
-;;                                              ))
-;;               (:cup . ,(desig:a location
-;;                                 (right-of (an object (type bowl)))
-;;                                 ;; (behind (an object (type bowl)))
-;;                                 (near (an object (type bowl)))
-;;                                 (for (an object (type cup)))))
-;;               (:bowl . ,(desig:a location
-;;                                  (on (desig:an object
-;;                                                (type counter-top)
-;;                                                (urdf-name kitchen-island-surface)
-;;                                                (owl-name "kitchen_island_counter_top")
-;;                                                (part-of kitchen)))
-;;                                  (context table-setting)
-;;                                  (for (an object (type bowl)))
-;;                                  (object-count 3)
-;;                                  (side back)
-;;                                  (side right)
-;;                                  (range-invert 0.5)))
-;;               (:spoon . ,(desig:a location
-;;                                   (right-of (an object (type bowl)))
-;;                                   (near (an object (type bowl)))
-;;                                   (for (an object (type spoon)))))
-;;               (:milk . ,(desig:a location
-;;                                  (left-of (an object (type bowl)))
-;;                                  (far-from (an object (type bowl)))
-;;                                  (for (an object (type milk)))))))))
-
-;;     (an object
-;;         (obj-part "drawer_sinkblock_upper_handle"))
-
-
-
-;;     (dolist (?object-type list-of-objects)
-;;       (let* ((?fetching-location
-;;                (cdr (assoc ?object-type object-fetching-locations)))
-;;              (?delivering-location
-;;                (cdr (assoc ?object-type object-placing-locations)))
-;;              (?arm-to-use
-;;                (cdr (assoc ?object-type *object-grasping-arms*)))
-;;              (?cad-model
-;;                (cdr (assoc ?object-type *object-cad-models*)))
-;;              (?color
-;;                (cdr (assoc ?object-type *object-colors*)))
-;;              (?object-to-fetch
-;;                (desig:an object
-;;                          (type ?object-type)
-;;                          (location ?fetching-location)
-;;                          (desig:when ?cad-model
-;;                            (cad-model ?cad-model))
-;;                          (desig:when ?color
-;;                            (color ?color)))))
-
-
-;;         (when (eq ?object-type :bowl)
-;;           (cpl:with-failure-handling
-;;               ((common-fail:high-level-failure (e)
-;;                  (roslisp:ros-warn (pp-plans demo) "Failure happened: ~a~%Skipping the search" e)
-;;                  (return)))
-;;             (let ((?loc (cdr (assoc :breakfast-cereal object-fetching-locations))))
-;;               (exe:perform
-;;                (desig:an action
-;;                          (type searching)
-;;                          (object (desig:an object (type breakfast-cereal)))
-;;                          (location ?loc))))))
-
-;;         (cpl:with-failure-handling
-;;             ((common-fail:high-level-failure (e)
-;;                (roslisp:ros-warn (pp-plans demo) "Failure happened: ~a~%Skipping..." e)
-;;                (return)))
-;;           (if (eq ?object-type :bowl)
-;;               (exe:perform
-;;                (desig:an action
-;;                          (type transporting)
-;;                          (object ?object-to-fetch)
-;;                          ;; (arm right)
-;;                          (location ?fetching-location)
-;;                          (target ?delivering-location)))
-;;               (if (eq ?object-type :breakfast-cereal)
-;;                   (exe:perform
-;;                    (desig:an action
-;;                              (type transporting)
-;;                              (object ?object-to-fetch)
-;;                              ;; (arm right)
-;;                              (location ?fetching-location)
-;;                              (target ?delivering-location)))
-;;                   (exe:perform
-;;                    (desig:an action
-;;                              (type transporting)
-;;                              (object ?object-to-fetch)
-;;                              (desig:when ?arm-to-use
-;;                                (arm ?arm-to-use))
-;;                              (location ?fetching-location)
-;;                              (target ?delivering-location))))))
-
-;;         ;; (setf pr2-proj-reasoning::*projection-reasoning-enabled* nil)
-;;         )))
-
-;;   ;; (setf pr2-proj-reasoning::*projection-reasoning-enabled* nil)
-
-;;   (park-robot)
-
-;;   (finalize)
-
-;;       cpl:*current-path*
-;;       )

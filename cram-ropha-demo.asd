@@ -32,6 +32,8 @@
   :license "BSD"
 
   :depends-on (roslisp-utilities ; for ros-init-function
+               roslisp
+               actionlib
 
                cl-transforms
                cl-transforms-stamped
@@ -39,6 +41,7 @@
                cram-tf
 
                cram-language
+               ;; cram-language-designator-support
                cram-executive
                cram-designators
                cram-prolog
@@ -83,5 +86,7 @@
     ((:file "package")
      (:file "setup" :depends-on ("package"))
      (:file "costmaps" :depends-on ("package"))
-     (:file "demo" :depends-on ("package" "costmaps"))
+     (:file "action" :depends-on ("package"))
+     (:file "action-designator" :depends-on ("package" "action"))
+     (:file "demo" :depends-on ("package" "costmaps" "action-designator"))
      ))))

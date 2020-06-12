@@ -407,28 +407,38 @@
 
   (aia:wait-for-sync-state 1)
   (let* (
-         (answer (ask-preference))
+         ;; (answer (ask-preference))
            (?knife (exe:perform
                     (desig:an action
                               (type fetch-knife)
                               )))
-           (?topping (exe:perform
-                    (desig:an action
-                              (type fetch-topping)
-                              )))
+           ;; (?topping (exe:perform
+           ;;          (desig:an action
+           ;;                    (type fetch-topping)
+           ;;                    )))
            )
 
-      (exe:perform (desig:an action
-                             (type apply-topping)
-                             ))
+      ;; (exe:perform (desig:an action
+      ;;                        (type apply-topping)
+      ;;                        ))
 
-      (exe:perform (desig:an action
-                             (type cut-waffle)
-                             ))
+      ;; (exe:perform (desig:an action
+      ;;                        (type cut-waffle)
+      ;;                        ))
+
+
+      ;; (exe:perform (desig:an action
+      ;;                        (type place-knife)
+      ;;                        (object ?knife)
+      ;;                        ))
     (place-knife ?knife)
 
-    (place-topping ?topping)
+      ;; (exe:perform (desig:an action
+      ;;                        (type place-topping)
+      ;;                        (object ?topping)
+      ;;                        ))
       (exe:perform (desig:an action
+
                              (type deliver-waffle)
                              ))
       ;; (apply-topping)

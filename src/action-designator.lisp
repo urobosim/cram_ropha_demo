@@ -15,10 +15,10 @@
     (desig-prop ?desig (:type  :deliver-waffle))
     )
 
-  (<- (desig:action-grounding ?desig (place-knife ?desig))
-      (desig-prop ?desig (:type  :place-knife)
-      (desig-prop ?desig (:object ?knife)))
-    )
+  ;; (<- (desig:action-grounding ?desig (place-knife ?desig))
+  ;;     (desig-prop ?desig (:type  :place-knife)
+  ;;     (desig:desig-prop ?desig (:object ?knife)))
+  ;;   )
 
   (<- (desig:action-grounding ?desig (fetch-knife ?desig))
     (desig-prop ?desig (:type  :fetch-knife ))
@@ -34,8 +34,8 @@
     (desig-prop ?desig (:type  :apply-topping))
     )
 
-  (<- (desig:action-grounding ?desig (place-topping ?desig))
-      (desig-prop ?desig (:type  :place-topping)
-      (desig-prop ?desig (:object ?topping)))
-    )
+  ;; (<- (desig:action-grounding ?desig (place-topping ?desig))
+  ;;     (desig-prop ?desig (:type  :place-topping)
+  ;;     (spec:property (:object ?topping)))
+  ;;   )
   )
